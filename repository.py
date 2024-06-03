@@ -1,3 +1,4 @@
+import shutil
 from git import Repo
 import os
 from commit_analyzer import CommitAnalyzer
@@ -5,19 +6,30 @@ from message_analyzer import MessageAnalyzer
 from density_analyzer import DensityAnalyzer
 
 class Repository:
-    def __init__(self, repo_path, standard_time_between, standard_weight, standard_density):
-        if not os.path.exists(repo_path):
-            raise ValueError(f"Repository path {repo_path} does not exist.")
-        self.repo = Repo(repo_path)
-        if self.repo.bare:
-            raise ValueError(f"Repository at {repo_path} is bare. Please clone it locally.")
+    def __init__(self, repo_url, standard_time_between, standard_weight, standard_density):
+        self.repo_url = repo_url
+        self.repo_path = '/tmp/cloned_repo'  # Temporary path for the cloned repository
+        self.clone_repo()
+        
         self.commit_analyzer = CommitAnalyzer(self.repo)
         self.message_analyzer = MessageAnalyzer()
         self.density_analyzer = DensityAnalyzer(standard_time_between, standard_weight, standard_density)
-    
+
+    def clone_repo(self):
+        if os.path.exists(self.repo_path):
+            shutil.rmtree(self.repo_path)
+        self.repo = Repo.clone_from(self.repo_url, self.repo_path)
+        if self.repo.bare:
+            raise ValueError(f"Repository at {self.repo_url} is bare. Please clone it properly.")
+
+    def delete_repo(self):
+        if os.path.exists(self.repo_path):
+            shutil.rmtree(self.repo_path)
+
     def analyze_commits(self):
         commits = list(self.repo.iter_commits())
         if len(commits) < 2:
+            self.delete_repo()
             raise ValueError("Not enough commits in the repository to analyze.")
         
         time_diffs = self.commit_analyzer.calculate_time_between_commits(commits)
@@ -45,3 +57,5 @@ class Repository:
             if commit_message_score < 0.5:  # threshold for commit message relevance
                 print(f"Warning: Commit message may not adequately describe the changes")
             print("-" * 80)
+        
+        self.delete_repo()
