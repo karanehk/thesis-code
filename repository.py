@@ -6,7 +6,7 @@ from message_analyzer import MessageAnalyzer
 from density_analyzer import DensityAnalyzer
 
 class Repository:
-    def __init__(self, repo_url, standard_time_between, standard_weight, standard_density, commits_range):
+    def __init__(self, repo_url, min_standard_time_between, max_standard_time_between, unattended_standard_time_between, standard_weight, standard_density, commits_range):
         self.repo_url = repo_url
         self.repo_path = '/tmp/cloned_repo'  # Temporary path for the cloned repository
         self.clone_repo()
@@ -15,7 +15,7 @@ class Repository:
         
         self.commit_analyzer = CommitAnalyzer(self.repo)
         self.message_analyzer = MessageAnalyzer()
-        self.density_analyzer = DensityAnalyzer(standard_time_between, standard_weight, standard_density)
+        self.density_analyzer = DensityAnalyzer(min_standard_time_between, max_standard_time_between, unattended_standard_time_between, standard_weight, standard_density)
 
     def clone_repo(self):
         if os.path.exists(self.repo_path):
@@ -61,7 +61,7 @@ class Repository:
             print(f"Commit Message Analysis Score = {commit_message_score:.2f}")
             print(diff_stat)
             if density_warning['time_diff_warning']:
-                print(f"Warning: Time difference {density_warning['time_diff']} exceeds standard {self.density_analyzer.standard_time_between}")
+                print(f"Warning: Time difference {density_warning['time_diff']} is out of bound considering our standards of commiting.")
             if density_warning['weight_warning']:
                 print(f"Warning: Diff weight {density_warning['weight']} exceeds standard {self.density_analyzer.standard_weight}")
             if density_warning['density_warning']:
