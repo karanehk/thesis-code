@@ -21,7 +21,15 @@ class CommitAnalyzer:
             previous_commit = commits[i-1]
             diff = self.repo.git.diff(previous_commit, current_commit)
             diff_stat = self._get_diffstat(diff)
-            diff_stats.append(diff_stat)
+            diff_data = []
+            for parent in commits[i].parents:
+                diff_index = parent.diff(commits[i], create_patch=True)
+                for diff_item in diff_index.iter_change_type('M'):
+                    diff_data.append({
+                        'file_name': diff_item.b_path,
+                        'diff_text': diff_item.diff.decode('utf-8', 'replace'),
+                    })
+            print(diff_data)
         return diff_stats
 
     def _get_diffstat(self, diff):

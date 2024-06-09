@@ -1,0 +1,7 @@
+shutil
+gitpython
+transformers
+scikit-learn
+regex
+torch
+scipy
