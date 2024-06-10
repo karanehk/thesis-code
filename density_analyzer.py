@@ -1,8 +1,10 @@
 import re
 
 class DensityAnalyzer:
-    def __init__(self, standard_time_between, standard_weight, standard_density):
-        self.standard_time_between = standard_time_between
+    def __init__(self, min_standard_time_between, max_standard_time_between, unattended_standard_time_between, standard_weight, standard_density):
+        self.min_standard_time_between = min_standard_time_between
+        self.max_standard_time_between = max_standard_time_between
+        self.unattended_standard_time_between = unattended_standard_time_between
         self.standard_weight = standard_weight
         self.standard_density = standard_density
 
@@ -17,7 +19,7 @@ class DensityAnalyzer:
                 'time_diff': time_diff,
                 'weight': weight,
                 'density': density,
-                'time_diff_warning': time_diff > self.standard_time_between,
+                'time_diff_warning': ((self.min_standard_time_between > time_diff or self.max_standard_time_between < time_diff) and (time_diff < self.unattended_standard_time_between)),
                 'weight_warning': weight > self.standard_weight,
                 'density_warning': density > self.standard_density
             }

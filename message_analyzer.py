@@ -1,6 +1,7 @@
 from transformers import pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import re
 
 class MessageAnalyzer:
     def __init__(self):
@@ -19,6 +20,7 @@ class MessageAnalyzer:
                 keywords.add(file_name)
             if 'insertions(+)' in line or 'deletions(-)' in line:
                 keywords.update(re.findall(r'\b\w+\b', line))
+        print(' '.join(keywords))
         return ' '.join(keywords)
 
     def _compare_message_with_diff(self, message, diff_keywords):
