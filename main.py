@@ -9,4 +9,7 @@ standard_density = 0.5        # example density standard
 commits_range = (int(input("Start of the commits: ")), int(input("End of the commits: ")))
 
 repository = Repository(repo_url, min_standard_time_between, max_standard_time_between, unattended_standard_time_between, standard_weight, standard_density, commits_range)
-repository.analyze_commits()
+try:
+    repository.analyze_commits()
+except:
+    repository.delete_repo()

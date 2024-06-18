@@ -110,7 +110,6 @@ class Repository:
         for i in range(len(desired_commits)):
             commit = desired_commits[i]
             diff_stat = diff_stats[i]
-            commit_message_score = self.message_analyzer.analyze_commit_message(commit.message.strip(), diff_stat)
             density_warning = density_warnings[i]
 
             parents = commit.parents
@@ -120,25 +119,25 @@ class Repository:
                 # Handle the initial commit or merge commits with multiple parents
                 diffs = commit.diff(None, create_patch=True)
         
-            '''print("dirty diffs:\n")
-            for dif in diffs:
-                print(dif)
-            print("***************")'''
+            
             cleaned_diffs = self.commit_analyzer.process_diff(diffs)
             df = pd.DataFrame(cleaned_diffs)
 
+            diff_text = ""
+            for index, row in df.iterrows():
+                diff_text += f"File Path: {row['file_path']}\n"\
+                f"Change Type: {row['change_type']}\n"\
+                f"Diff:\n{row['diff']}"\
+                "\n" + "*"*50 + "\n"
+
             print(f"Commit {self.commits_range[0]+i} ({commit.message.strip()}):")
 
-            for index, row in df.iterrows():
-                print(f"File Path: {row['file_path']}")
-                print(f"Change Type: {row['change_type']}")
-                print(f"Diff:\n{row['diff']}")
-                print("\n" + "-"*80 + "\n")
+            commit_message_analysis = self.message_analyzer.analyze_commit_message(commit, diff_text)
 
             print(f"Time Diff = {density_warning['time_diff']} seconds")
             print(f"Diff Weight = {density_warning['weight']} lines")
             print(f"Density = {density_warning['density']:.2f}")
-            print(f"Commit Message Analysis Score = {commit_message_score:.2f}")
+            print(f"Commit Message Analysis:\n{commit_message_analysis}")
             print(diff_stat)
             if density_warning['time_diff_warning']:
                 print(f"Warning: Time difference {density_warning['time_diff']} is out of bound considering our standards of commiting.")
@@ -146,8 +145,7 @@ class Repository:
                 print(f"Warning: Diff weight {density_warning['weight']} exceeds standard {self.density_analyzer.standard_weight}")
             if density_warning['density_warning']:
                 print(f"Warning: Density {density_warning['density']:.2f} exceeds standard {self.density_analyzer.standard_density}")
-            if commit_message_score < 0.5:  # threshold for commit message relevance
-                print(f"Warning: Commit message may not adequately describe the changes")
             print("-" * 80)
-        
+            time.sleep(3)
+
         self.delete_repo()
