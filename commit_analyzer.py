@@ -5,42 +5,49 @@ class CommitAnalyzer:
     def __init__(self, repo):
         self.repo = repo
 
-    def calculate_time_between_commits(self, commits, index_range):
-        time_diffs = []
-        for i in range(index_range[0]-1, index_range[1]):
-            if i == 0:
-                time_diffs.append(0)
-            else:
-                current_commit_time = commits[i].committed_datetime
-                previous_commit_time = commits[i-1].committed_datetime
-                time_diff = (current_commit_time - previous_commit_time).total_seconds()
-                time_diffs.append(time_diff)
+    def calculate_time_between_commits(self, arranged_commits):
+        time_diffs = dict()
+        for author in arranged_commits.keys():
+            for i, (index, commit) in enumerate(arranged_commits[author]):
+                if i == 0:
+                    time_diffs[author] = [(index, 0)]
+                else:
+                    current_commit_time = commit.committer_date
+                    previous_commit_time = arranged_commits[author][i-1][1].committer_date
+                    time_diff = (current_commit_time - previous_commit_time).total_seconds()/60 #in minuets
+                    time_diffs[author].append((index, time_diff))
         return time_diffs
     
-    def calculate_diff_stats(self, commits, index_range):
-        diff_stats = []
-        for i in range(index_range[0]-1, index_range[1]):
-            if i == 0:
-                diff_stats.append('first')
-            else:
-                current_commit = commits[i]
-                previous_commit = commits[i-1]
-                diff = self.repo.git.diff(previous_commit, current_commit)
-                diff_stat = self._get_diffstat(diff)
-                diff_stats.append(diff_stat)
-            '''
-            diff_data = []
-            for parent in commits[i].parents:
-                diff_index = parent.diff(commits[i], create_patch=True)
-                for diff_item in diff_index.iter_change_type('M'):
-                    diff_data.append({
-                        'file_name': diff_item.b_path,
-                        'diff_text': diff_item.diff.decode('utf-8', 'replace'),
-                    })
-            print(diff_data)
-            '''
-        return diff_stats
+    def calculate_diff_stats(self, arranged_commits):
+        diff_stats = dict()
+        for author in arranged_commits.keys():
+            for i, (index, commit) in enumerate(arranged_commits[author]):
+                if index == 0:
+                    diff_stats[author] = [(index, 'first')]
+                else:
+                    diff_stat = ""
+                    for file in commit.modified_files:
 
+                        diff_list = file.diff_parsed
+                        flattened_diff = []
+                        for key, value_list in diff_list.items():
+                            for ln, line in value_list:
+                                flattened_diff.append((ln, key, line))
+                        sorted_diff = sorted(flattened_diff, key=lambda x: x[0])
+                        diff_value = ""
+                        for ln, key, line in sorted_diff:
+                            diff_value += f"{key}: {ln}  {line}"
+
+                        diff_stat += "File name: {}\n".format(m.filename),
+                        "Change type: {}\n".format(m.change_type.name),
+                        "Changes:\n{}\n".format(diff_value)
+
+                    if author in diff_stats:
+                        diff_stats[author].append((index, diff_stat))
+                    else:
+                        diff_stats[author] = [(index, diff_stat)]
+        return diff_stats
+'''
     def process_diff(self, diff):
         cleaned_diff = []
         for change in diff:
@@ -65,8 +72,8 @@ class CommitAnalyzer:
                     processed_lines.append(f'Removed: {line[1:]}')
                 elif line.startswith('-'):
                     processed_lines.append(f'Added: {line[1:]}')
-                '''else:
-                    processed_lines.append(f'Unchanged: {line}')'''
+                else:
+                    processed_lines.append(f'Unchanged: {line}')
         
             processed_diff_text = '\n'.join(processed_lines)
         
@@ -77,11 +84,10 @@ class CommitAnalyzer:
             })
 
         return cleaned_diff
-
-
     def _get_diffstat(self, diff):
         process = subprocess.Popen(['diffstat'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         stdout, stderr = process.communicate(input=diff)
         if process.returncode != 0:
             raise RuntimeError(f"diffstat error: {stderr}")
         return stdout
+'''
