@@ -1,5 +1,6 @@
 import subprocess
 import re
+from time import sleep
 
 class CommitAnalyzer:
     def __init__(self, repo):
@@ -18,16 +19,16 @@ class CommitAnalyzer:
                     time_diffs[author].append((index, time_diff))
         return time_diffs
     
-    def calculate_diff_stats(self, arranged_commits):
+    def calculate_diff_stats(self, repo, des):
         diff_stats = dict()
-        for author in arranged_commits.keys():
-            for i, (index, commit) in enumerate(arranged_commits[author]):
+        for index, commit in enumerate(repo.traverse_commits()):
+            if index in range(des[0], des[1]):
                 if index == 0:
-                    diff_stats[author] = [(index, 'first')]
+                    diff_stats[commit.author.name] = [(index, 'First commit, so no diff provided.', 'first')]
                 else:
                     diff_stat = ""
+                    lines = 0
                     for file in commit.modified_files:
-
                         diff_list = file.diff_parsed
                         flattened_diff = []
                         for key, value_list in diff_list.items():
@@ -36,16 +37,15 @@ class CommitAnalyzer:
                         sorted_diff = sorted(flattened_diff, key=lambda x: x[0])
                         diff_value = ""
                         for ln, key, line in sorted_diff:
-                            diff_value += f"{key}: {ln}  {line}"
-
-                        diff_stat += "File name: {}\n".format(m.filename),
-                        "Change type: {}\n".format(m.change_type.name),
-                        "Changes:\n{}\n".format(diff_value)
-
-                    if author in diff_stats:
-                        diff_stats[author].append((index, diff_stat))
+                            diff_value += f"{key}: {ln}  {line}\n"
+                        diff_stat += ("File name: {}\n".format(file.filename) +
+                        "Change type: {}\n".format(file.change_type.name) +
+                        "Changes:\n{}\n".format(diff_value))
+                        lines += (file.added_lines + file.deleted_lines)
+                    if commit.author.name in diff_stats:
+                        diff_stats[commit.author.name].append((index, diff_stat, lines))
                     else:
-                        diff_stats[author] = [(index, diff_stat)]
+                        diff_stats[commit.author.name] = [(index, diff_stat, lines)]
         return diff_stats
 '''
     def process_diff(self, diff):
