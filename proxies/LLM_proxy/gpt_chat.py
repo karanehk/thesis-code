@@ -12,7 +12,7 @@ from langchain.schema import AIMessage
 class GPTChat:
     def __init__(self):
         self.llm = ChatOpenAI(
-            model="gpt-3.5-turbo",
+            model="gpt-4o",
             temperature=0.2,
             timeout=None,
             max_tokens=1000,
@@ -46,18 +46,39 @@ class GPTChat:
     def ask_gpt_about_commit(self, diff, commit_data):
 
         user_inputs = [
-            f"We are analyzing a GitHub repository. I will give you the diff value of a commit in this repository and I want you to tell me what files were changed for what purpose. "
-            "Give a bulleted list of your findings based on the data I will provide you.\nAs an example, consider the following diff text and its corresponding bullet list:\n"
-            'DIFF_TXT: """File Path: calculator.py\nChange Type: modified_file\nDiff:\nAdded: def subtract(num1, num2):\nAdded: return num1 - num2\nAdded:\nAdded: subtract(num1, num2)\nRemoved: sub(num1, num2)"""\n\n'
-            'BULLET_LIST: """ - The calculator.py file was modified.\n\n - The commit intended to add the subtract function\n - They changed their mind about the name of the function from sub to subtraction.\n - This is considered a feat/feature commit"""\n'
-            f'now answer for the following:\nDIFF_TXT: """{diff}"""',
-            f"Now, considering the bulleted list you provided for the given diff, let's analyze the corresponding commit message and see if it was chosen correctly and rationally.\n"
-            'First of all, keep the following points about commit message analysis in mind:\n""" - Descriptive Message: A clear and descriptive commit message often indicates a well-thought-out change. Look for specific, action-oriented verbs (e.g., "fix", "add", "remove", "refactor").\n'
-            ' - Presence of Keywords: Keywords like "fix", "bug", "feature", "refactor", and "optimize" can provide clues about the nature of the change."""\n'
-            'Secondly, remember the last example I gave you, that commit\'s message was "adding subtract function". In this message, we see the keyword add, which is what was done in the commit, we see the name of the function/feature that was added. '
-            f'So overall, it is considered a good, clear, and descriptive commit message. Now, the commit you analyzed, had the following message: """{commit_data["message"]}""". '
-            "Tell me what you think about this message. What score do you give it between 0-10? State your reasons for the score you gave."
-        ]
+        f"""We are analyzing a GitHub repository. I will provide you with the diff of a commit, and I want you to tell me what files were changed and for what purpose. Provide a detailed bulleted list of your findings based on the given data.
+        Here's an example diff and its corresponding analysis:
+        DIFF_TXT: 
+        \"\"\"File name: calculator.py
+        Change type: MODIFY
+        Changes:
+        added: 1  def subtract(num1, num2):
+        added: 2      return num1 - num2
+        added: 3  
+        deleted: 22          sub(num1, num2)
+        added: 25          subtract(num1, num2)
+        \"\"\"
+        BULLET_LIST:
+        \"\"\" - The file `calculator.py` was modified.
+        - A new function `subtract` was added.
+        - The return statement for the new function was added.
+        - The function call was updated to use `subtract` instead of `sub`.
+        - This commit represents a feature addition (feat/feature).
+        \"\"\"
+        Now, please analyze the following diff and provide a similar bulleted list and Keep in mind that if the DIFF_TXT is "First commit, so no diff provided." then you don't need to give a list.:
+        DIFF_TXT: \"\"\"{diff}\"\"\"
+        """,
+        f"""Now, let's analyze the commit message for the given diff. Consider the following points when evaluating the commit message:
+        1. Descriptive Message: A clear and descriptive commit message often indicates a well-thought-out change. Look for specific, action-oriented verbs (e.g., "fix", "add", "remove", "refactor", "initiate", "init").
+        2. Presence of Keywords: Keywords like "fix", "bug", "feature", "refactor", and "optimize" can provide clues about the nature of the change.
+        Here's an example of a good commit message:
+        - Commit Message: "adding subtract function"
+          - Analysis: The message includes the keyword "add," which clearly indicates the action performed. It specifies the function added, making it clear and descriptive.
+        Now, consider the commit you analyzed. The commit message was:
+        \"\"\"{commit_data["message"]}\"\"\"
+        Analyze this message and rate its clarity and descriptiveness on a scale from 0 to 10. Keep in mind that if the DIFF_TXT is "First commit, so no diff provided." then messages like first commit, initial commit, init and such are ok. Provide your reasons for the score you assign.
+        """
+    ]
 
         # Start the conversation loop
         # print("Start chatting with the AI (type 'exit' or 'quit' to end):")
@@ -69,12 +90,12 @@ class GPTChat:
             # Get the response from the conversation chain
             response = self.conversation_chain.predict(history=self.memory.load_memory_variables({})['history'], input=formatted_input)
             response_text += response + "\n"
-            if i == 0:
+            '''if i == 0:
                 to_save.append(AIMessage(content=response))
             else:
-                self.memory.clear()
+                self.memory.clear()'''
             sleep(3)
-
+        to_save.append(AIMessage(content=response_text))
         self.memory.clear()
         self.memory.chat_memory.messages = to_save
 

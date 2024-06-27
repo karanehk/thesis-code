@@ -14,13 +14,13 @@ class DensityAnalyzer:
             for i, (index, time_diff) in enumerate(time_diffs_list):
                 mass = next(filter(lambda x: x[0] == index, diff_stats[author]), None)[2]
                 density = (mass / time_diff) if time_diff != 0 else ("Author's first commit" if i == 0 else float('inf'))
-                
+
                 warnings = {
                     'time_diff': time_diff if time_diff != 0 else ("Author's first commit" if i == 0 else "No time between author's commits!"),
                     'mass': mass,
                     'density': density,
-                    'time_diff_warning': False if i == 0 else (((self.min_standard_time_between > time_diff or self.max_standard_time_between < time_diff) and (time_diff < self.unattended_standard_time_between))),
-                    'mass_warning': mass > self.standard_mass,
+                    'time_diff_warning': False if (i == 0 or density < self.standard_density) else (((self.min_standard_time_between > time_diff or self.max_standard_time_between < time_diff) and (time_diff < self.unattended_standard_time_between))),
+                    'mass_warning': False if index == 0 else mass > self.standard_mass,
                     'density_warning': False if density == "Author's first commit" else density > self.standard_density
                 }
                 if author in density_warnings:

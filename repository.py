@@ -10,6 +10,7 @@ import subprocess
 import time
 import pydriller
 import itertools
+import json
 
 
 class Repository:
@@ -42,6 +43,16 @@ class Repository:
         if os.path.exists(self.repo_path):
             shutil.rmtree(self.repo_path)
 
+    def _load_json(self, file_path):
+        with open(file_path, 'r') as f:
+            return json.load(f)
+
+    def _write_js_variable(self, js_file_path, variable_name, json_data):
+        with open(js_file_path, 'w') as f:
+            f.write(f'const {variable_name} = ')
+            json.dump(json_data, f, indent=4)
+            f.write(';\n')
+
     def analyze_commits(self):
         commits_list = list(self.repo.traverse_commits())
 
@@ -65,30 +76,52 @@ class Repository:
         diff_stats = self.commit_analyzer.calculate_diff_stats(self.repo, self.commits_range)
         density_warnings = self.density_analyzer.analyze_density(time_diffs, diff_stats)
 
+        output_data = dict()
+
         for author in arranged_commits.keys():
             for i, (index, commit) in enumerate(arranged_commits[author]):
                 diff_text = next(filter(lambda x: x[0] == index, diff_stats[author]), None)[1]
                 density_warning = next(filter(lambda x: x[0] == index, density_warnings[author]), None)[1]
                 commit_message_analysis = self.message_analyzer.analyze_commit_message(commit, diff_text, index+1)
+                commit_data = {
+                    "commit_number": index + 1,
+                    "commit_message": commit.msg.strip(),
+                    "time_diff": density_warning['time_diff'],
+                    "diff_mass": density_warning['mass'],
+                    "density": density_warning['density'] if density_warning['density'] == "Author's first commit" else f"{density_warning['density']:.2f}",
+                    "commit_message_analysis": commit_message_analysis,
+                    "diff_text": diff_text,
+                    "warnings": {
+                        "time_diff_warning": density_warning['time_diff_warning'],
+                        "mass_warning": density_warning['mass_warning'],
+                        "density_warning": density_warning['density_warning']
+                    },
+                    "warnings_text": []
+                }
 
-                print(f"Commit {index+1} ({commit.msg.strip()}):")
-
-                print(f"Time Diff = {density_warning['time_diff']} minuets")
-                print(f"Diff mass = {density_warning['mass']} lines")
-                if density_warning['density'] == "Author's first commit":
-                    print(f"Density = {density_warning['density']}")
-                else:
-                    print(f"Density = {density_warning['density']:.2f}")
-                print(f"Commit Message Analysis:\n{commit_message_analysis}")
-                print(diff_text)
                 if density_warning['time_diff_warning']:
-                    print(f"Warning: Time difference {density_warning['time_diff']} is out of bound considering our standards of commiting.")
+                    commit_data["warnings_text"].append(
+                        f"Warning: Time difference {density_warning['time_diff']} is out of bound considering our standards of committing."
+                    )
                 if density_warning['mass_warning']:
-                    print(f"Warning: Diff mass {density_warning['mass']} exceeds standard {self.density_analyzer.standard_mass}")
+                    commit_data["warnings_text"].append(
+                        f"Warning: Diff mass {density_warning['mass']} exceeds standard {self.density_analyzer.standard_mass}"
+                    )
                 if density_warning['density_warning']:
-                    print(f"Warning: Density {density_warning['density']:.2f} exceeds standard {self.density_analyzer.standard_density}")
-                print("-" * 80)
-                time.sleep(3)
+                    commit_data["warnings_text"].append(
+                        f"Warning: Density {density_warning['density']:.2f} exceeds standard {self.density_analyzer.standard_density}"
+                    )
+                if i == 0:
+                    output_data[author] = [commit_data]
+                else:
+                    output_data[author].append(commit_data)
+
+        # Write the data to a JSON file
+        with open('commit_data.json', 'w') as json_file:
+            json.dump(output_data, json_file, indent=4)
+        
+        json_data = self._load_json('commit_data.json')
+        self._write_js_variable('result/data.js', 'jsonData', json_data)
 
         self.delete_repo()
 

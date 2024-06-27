@@ -1,0 +1,54 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: auto; /* Define a fixed max-width for the container */
+    margin: 50px auto;
+    background: #fff;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.commit {
+    border-bottom: 1px solid #ddd;
+    padding: 10px 0;
+}
+
+.commit:last-child {
+    border-bottom: none;
+}
+
+.commit h2 {
+    font-size: 18px;
+    color: #007BFF;
+    cursor: pointer;
+    margin: 0;
+}
+
+.commit-details {
+    display: none;
+    margin-top: 10px;
+}
+
+.commit-details p {
+    margin: 5px 0;
+}
+
+.commit-details pre {
+    background: #f4f4f4;
+    padding: 10px;
+    border-radius: 4px;
+    white-space: pre-wrap; /* Ensures long lines are wrapped */
+    word-wrap: break-word; /* Breaks long words if necessary */
+    overflow-x: auto; /* Adds horizontal scrolling if content overflows */
+}
