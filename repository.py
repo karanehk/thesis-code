@@ -13,7 +13,7 @@ import itertools
 
 
 class Repository:
-    def __init__(self, repo_url, min_standard_time_between, max_standard_time_between, unattended_standard_time_between, standard_weight, standard_density, commits_range):
+    def __init__(self, repo_url, min_standard_time_between, max_standard_time_between, unattended_standard_time_between, standard_mass, standard_density, commits_range):
         self.repo_url = repo_url
         self.repo_path = './tmp/cloned_repo'  # Temporary path for the cloned repository        
         self.increase_git_buffer_size()
@@ -22,7 +22,7 @@ class Repository:
         self.commits_range = commits_range
         self.commit_analyzer = CommitAnalyzer(self.repo)
         self.message_analyzer = MessageAnalyzer()
-        self.density_analyzer = DensityAnalyzer(min_standard_time_between, max_standard_time_between, unattended_standard_time_between, standard_weight, standard_density)
+        self.density_analyzer = DensityAnalyzer(min_standard_time_between, max_standard_time_between, unattended_standard_time_between, standard_mass, standard_density)
 
     def increase_git_buffer_size(self):
         try:
@@ -74,7 +74,7 @@ class Repository:
                 print(f"Commit {index+1} ({commit.msg.strip()}):")
 
                 print(f"Time Diff = {density_warning['time_diff']} minuets")
-                print(f"Diff Weight = {density_warning['weight']} lines")
+                print(f"Diff mass = {density_warning['mass']} lines")
                 if density_warning['density'] == "Author's first commit":
                     print(f"Density = {density_warning['density']}")
                 else:
@@ -83,8 +83,8 @@ class Repository:
                 print(diff_text)
                 if density_warning['time_diff_warning']:
                     print(f"Warning: Time difference {density_warning['time_diff']} is out of bound considering our standards of commiting.")
-                if density_warning['weight_warning']:
-                    print(f"Warning: Diff weight {density_warning['weight']} exceeds standard {self.density_analyzer.standard_weight}")
+                if density_warning['mass_warning']:
+                    print(f"Warning: Diff mass {density_warning['mass']} exceeds standard {self.density_analyzer.standard_mass}")
                 if density_warning['density_warning']:
                     print(f"Warning: Density {density_warning['density']:.2f} exceeds standard {self.density_analyzer.standard_density}")
                 print("-" * 80)
